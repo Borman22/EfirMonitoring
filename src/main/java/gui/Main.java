@@ -6,29 +6,41 @@ import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
 import java.awt.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+/* TODO
+ 1. Сделать контроль наличия логотипа
+ 2. Дать возможность выбора, на какую почту отправлять сообщения (или Push уведомления)
+ 3. Дать возможность запускать в фоновом или полном режиме
+ 4. Сделать выбор за чем следить: обычный логотип, новогодний логотип, траурный (траур + новый год), свечка.
+
+  1000. Контролировать знак 16+
+  2000. Подумать, как программа может сама включать логотип.
+
+  */
 public class Main {
 
     public static void main(String[] args) {
         int FRAME_WIDTH = 800;
         int FRAME_HEIGHT = 600;
-        int maxFreezeTime = 1000; // ms
+        int maxFreezeTime = 4000; // ms
 
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.loadLibrary("opencv_ffmpeg400_64");
 
         String videoStreamAdr = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
 
-        VideoCapture videoStream = new VideoCapture(0);
-//        VideoCapture videoStream = new VideoCapture(videoStreamAdr);
+//        VideoCapture videoStream = new VideoCapture(0);
+        VideoCapture videoStream = new VideoCapture(videoStreamAdr);
 
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
 
         if (!videoStream.isOpened()) {
-            System.out.println("Error");
+            System.out.println("Error. I cannot open the video stream");
             videoStream.release();
             return;
         }
@@ -43,24 +55,30 @@ public class Main {
         Mat frame_temp = new Mat(FRAME_HEIGHT, FRAME_WIDTH, CvType.CV_8UC3);
         Size size = new Size(3, 3);
         Mat mat = new Mat();
-        Scalar scalar1 = new Scalar(0, 0, 255);
+        Scalar scalar1 = new Scalar(0, 0, 255); //BGR
         Scalar scalar2 = new Scalar(0, 255, 0);
 
-        View view = new View(videoStream, frame_temp); //-----------------
+//        View view = new View(videoStream, frame_temp); //-----------------
 
         long currentTime = System.currentTimeMillis();
         long previousTime = currentTime;
 
-        System.out.println("Program is working");
+        System.out.println("The program monitors the broadcast. Allowed freeze frame less than " + maxFreezeTime / 1000 + " seconds ");
 
         int counter = 0;
-        int counter2 = 0;
+        int frameCounter = 0;
         while (true) {
             if (videoStream.read(frame)) {
-                if (++counter == 200) {
-                    System.out.println("counter = " + ++counter2);
+                if (++counter == 5000) {
+                    System.out.println();
                     counter = 0;
                 }
+
+                if(++frameCounter != 25){
+                    continue;
+                }
+                System.out.print('.');
+                frameCounter = 0;
                 frame.copyTo(frame_current);
 
                 Imgproc.GaussianBlur(frame_current, frame_current, size, 0);
@@ -68,7 +86,11 @@ public class Main {
                 if (index > 1) {
                     Core.subtract(frame_previous, frame_current, frame_result);
 
+
+
                     Imgproc.cvtColor(frame_result, frame_result, Imgproc.COLOR_RGB2GRAY);
+
+
                     Imgproc.threshold(frame_result, frame_result, sensivity, 255, Imgproc.THRESH_BINARY);
 
                     List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -88,7 +110,7 @@ public class Main {
                             Imgproc.rectangle(frame, r.br(), r.tl(), scalar2, 1);
                             frame.copyTo(frame_temp);
 
-                            view.repaint(); //----------
+
                         }
                         contour.release();
                     }
@@ -99,7 +121,7 @@ public class Main {
 //                                MailSender.sendMail("Video frozen", "borman5433@gmail.com");
                             java.awt.Toolkit tk = Toolkit.getDefaultToolkit();
                             tk.beep();
-                            System.out.println("Video frozen");
+                            System.out.println(new SimpleDateFormat("\ndd.MM.yyyy hh:mm:ss").format(new Date()) + "   -   Warning! Video frozen");
                             previousTime = currentTime = System.currentTimeMillis();
                         }
                     } else {
@@ -107,6 +129,7 @@ public class Main {
 
                     }
                 }
+//                        view.repaint(); //----------
 
                 index++;
 
