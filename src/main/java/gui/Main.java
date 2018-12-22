@@ -26,7 +26,7 @@ public class Main {
     public static void main(String[] args) {
         int FRAME_WIDTH = 800;
         int FRAME_HEIGHT = 600;
-        int maxFreezeTime = 4000; // ms
+        int maxFreezeTime = 7000; // ms
 
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.loadLibrary("opencv_ffmpeg400_64");
@@ -67,18 +67,21 @@ public class Main {
 
         int counter = 0;
         int frameCounter = 0;
+
         while (true) {
             if (videoStream.read(frame)) {
-                if (++counter == 5000) {
-                    System.out.println();
+
+//*
+                if(++frameCounter != 25)    // анализируем каждый двадцать пятый кадр
+                    continue;
+                frameCounter = 0;
+
+                System.out.print('.'); // Рисуем точки на экране, чтобы было видно, что программа работает
+                if (++counter == 180) {
+                    System.out.print(new SimpleDateFormat("\nHH:mm:ss").format(new Date())); // Перенос строки
                     counter = 0;
                 }
-
-                if(++frameCounter != 25){
-                    continue;
-                }
-                System.out.print('.');
-                frameCounter = 0;
+//*/
                 frame.copyTo(frame_current);
 
                 Imgproc.GaussianBlur(frame_current, frame_current, size, 0);
@@ -118,10 +121,11 @@ public class Main {
                     currentTime = System.currentTimeMillis();
                     if (!foundMovement) {
                         if (currentTime - previousTime > maxFreezeTime) {
-//                                MailSender.sendMail("Video frozen", "borman5433@gmail.com");
+//                                MessageSender.sendEMail("Video frozen", "borman5433@gmail.com");
                             java.awt.Toolkit tk = Toolkit.getDefaultToolkit();
                             tk.beep();
-                            System.out.println(new SimpleDateFormat("\ndd.MM.yyyy hh:mm:ss").format(new Date()) + "   -   Warning! Video frozen");
+                            System.out.println(new SimpleDateFormat("\ndd.MM.yyyy HH:mm:ss").format(new Date()) + "   -   Warning! Video frozen");
+                            counter = 0;
                             previousTime = currentTime = System.currentTimeMillis();
                         }
                     } else {
@@ -138,7 +142,12 @@ public class Main {
                 frame_result.release();
                 frame_current.release();
 
+            } else {
+                System.out.println("Кадр не прочитан - скорее всего завис ffmpeg");
+                System.out.println("Перезапустим main() другом потоке, а этот поток " + Thread.currentThread().getName() + " завершим");
+                new Reboot(Thread.currentThread().getName() + "_1");
+                Thread.currentThread().stop();
             }
         }
     }
-}  
+}
