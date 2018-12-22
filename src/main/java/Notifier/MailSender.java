@@ -1,4 +1,4 @@
-package gui;
+package Notifier;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -11,9 +11,20 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-class MailSender {
-    public static void sendMail(String myMessage, String email) {
-        Properties props = new Properties();
+public class MailSender extends MessageSender{
+
+    private String eMailOfTheRecipient;
+    private Properties props;
+    private String userName = "borman5433";
+    private String password = "borman5433";
+
+    private String myMessage;
+    Thread thread;
+
+    public MailSender(String eMailOfTheRecipient){
+        this.eMailOfTheRecipient = eMailOfTheRecipient;
+
+        props = new Properties();
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.socketFactory.port", "465");
         props.put("mail.smtp.socketFactory.class",
@@ -21,31 +32,36 @@ class MailSender {
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.port", "465");
 
+
+    }
+
+    public void sendMessage(String myMessage) {
+        this.myMessage = myMessage;
+        thread = new Thread(this);
+        thread.start();
+
+    }
+
+    public void run() {
         Session session = Session.getDefaultInstance(props,
                 new javax.mail.Authenticator() {
                     protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication("borman5433", "borman5433");
+                        return new PasswordAuthentication(userName, password);
                     }
                 });
-
         try {
-
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress("borman5433@gmail.com"));
             message.setRecipients(Message.RecipientType.TO,
-                    InternetAddress.parse(email));
-            message.setSubject("Error ARC-EFIR " + new SimpleDateFormat("dd.MM.yyyy hh:mm:ss").format(new Date()));
+                    InternetAddress.parse(eMailOfTheRecipient));
+            message.setSubject("EfirMonitoringError " + new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(new Date()));
+
             message.setText(myMessage);
 
             Transport.send(message);
-            System.out.println("E-mail sent to " + email);
+            System.out.println("E-mail sent to " + eMailOfTheRecipient);
         } catch (MessagingException e) {
             throw new RuntimeException(e);
         }
     }
-
-    public static void sendPush(String myMessage) {
-
-    }
-
 }

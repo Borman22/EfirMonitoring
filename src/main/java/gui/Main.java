@@ -1,5 +1,7 @@
 package gui;
 
+import Notifier.MailSender;
+import Notifier.MessageSender;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
@@ -68,6 +70,8 @@ public class Main {
         int counter = 0;
         int frameCounter = 0;
 
+        MessageSender messageSender = new MailSender("borman5433@gmail.com");
+
         while (true) {
             if (videoStream.read(frame)) {
 
@@ -88,12 +92,7 @@ public class Main {
 
                 if (index > 1) {
                     Core.subtract(frame_previous, frame_current, frame_result);
-
-
-
                     Imgproc.cvtColor(frame_result, frame_result, Imgproc.COLOR_RGB2GRAY);
-
-
                     Imgproc.threshold(frame_result, frame_result, sensivity, 255, Imgproc.THRESH_BINARY);
 
                     List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -113,7 +112,6 @@ public class Main {
                             Imgproc.rectangle(frame, r.br(), r.tl(), scalar2, 1);
                             frame.copyTo(frame_temp);
 
-
                         }
                         contour.release();
                     }
@@ -121,16 +119,15 @@ public class Main {
                     currentTime = System.currentTimeMillis();
                     if (!foundMovement) {
                         if (currentTime - previousTime > maxFreezeTime) {
-//                                MessageSender.sendEMail("Video frozen", "borman5433@gmail.com");
                             java.awt.Toolkit tk = Toolkit.getDefaultToolkit();
                             tk.beep();
+                            messageSender.sendMessage("Warning! Video frozen");
                             System.out.println(new SimpleDateFormat("\ndd.MM.yyyy HH:mm:ss").format(new Date()) + "   -   Warning! Video frozen");
                             counter = 0;
                             previousTime = currentTime = System.currentTimeMillis();
                         }
                     } else {
                         previousTime = currentTime;
-
                     }
                 }
 //                        view.repaint(); //----------
@@ -143,6 +140,7 @@ public class Main {
                 frame_current.release();
 
             } else {
+                messageSender.sendMessage("Кадр не прочитан - скорее всего завис ffmpeg. Перезапускаем main() в другом потоке");
                 System.out.println("Кадр не прочитан - скорее всего завис ffmpeg");
                 System.out.println("Перезапустим main() другом потоке, а этот поток " + Thread.currentThread().getName() + " завершим");
                 new Reboot(Thread.currentThread().getName() + "_1");
