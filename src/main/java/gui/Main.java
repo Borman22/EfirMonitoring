@@ -1,13 +1,11 @@
 package gui;
 
-import Notifier.MailSender;
-import Notifier.MessageSender;
+import Notifier.*;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
-import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,11 +33,12 @@ public class Main {
 
         String videoStreamAdr = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
 
-//        VideoCapture videoStream = new VideoCapture(0);
-        VideoCapture videoStream = new VideoCapture(videoStreamAdr);
+        VideoCapture videoStream = new VideoCapture(0);
+//        VideoCapture videoStream = new VideoCapture(videoStreamAdr);
 
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
+
 
         if (!videoStream.isOpened()) {
             System.out.println("Error. I cannot open the video stream");
@@ -70,7 +69,14 @@ public class Main {
         int counter = 0;
         int frameCounter = 0;
 
-        MessageSender messageSender = new MailSender("borman5433@gmail.com");
+        String alarmMessage;
+
+        Notifier [] notifiers = new Notifier[]{
+                new MailNotifier("borman5433@gmail.com"),
+                new PushNotifier(),
+                new SoundNotifier(),
+                new GUINotifier()
+        };
 
         while (true) {
             if (videoStream.read(frame)) {
@@ -119,10 +125,11 @@ public class Main {
                     currentTime = System.currentTimeMillis();
                     if (!foundMovement) {
                         if (currentTime - previousTime > maxFreezeTime) {
-                            java.awt.Toolkit tk = Toolkit.getDefaultToolkit();
-                            tk.beep();
-                            messageSender.sendMessage("Warning! Video frozen");
-                            System.out.println(new SimpleDateFormat("\ndd.MM.yyyy HH:mm:ss").format(new Date()) + "   -   Warning! Video frozen");
+                            new SoundNotifier();
+                            alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Warning! Video frozen";
+                            for (Notifier notifier : notifiers) {
+                                notifier.sendMessage(alarmMessage);
+                            }
                             counter = 0;
                             previousTime = currentTime = System.currentTimeMillis();
                         }
@@ -140,9 +147,10 @@ public class Main {
                 frame_current.release();
 
             } else {
-                messageSender.sendMessage("Кадр не прочитан - скорее всего завис ffmpeg. Перезапускаем main() в другом потоке");
-                System.out.println("Кадр не прочитан - скорее всего завис ffmpeg");
-                System.out.println("Перезапустим main() другом потоке, а этот поток " + Thread.currentThread().getName() + " завершим");
+                alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Кадр не прочитан - скорее всего завис ffmpeg. Перезапускаем main() в другом потоке";
+                for (Notifier notifier : notifiers) {
+                    notifier.sendMessage(alarmMessage);
+                }
                 new Reboot(Thread.currentThread().getName() + "_1");
                 Thread.currentThread().stop();
             }

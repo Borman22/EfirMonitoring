@@ -11,7 +11,7 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-public class MailSender extends MessageSender{
+public class MailNotifier implements Notifier, Runnable {
 
     private String eMailOfTheRecipient;
     private Properties props;
@@ -19,9 +19,8 @@ public class MailSender extends MessageSender{
     private String password = "borman5433";
 
     private String myMessage;
-    Thread thread;
 
-    public MailSender(String eMailOfTheRecipient){
+    public MailNotifier(String eMailOfTheRecipient){
         this.eMailOfTheRecipient = eMailOfTheRecipient;
 
         props = new Properties();
@@ -31,15 +30,11 @@ public class MailSender extends MessageSender{
                 "javax.net.ssl.SSLSocketFactory");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.port", "465");
-
-
     }
 
     public void sendMessage(String myMessage) {
         this.myMessage = myMessage;
-        thread = new Thread(this);
-        thread.start();
-
+        new Thread(this).start();
     }
 
     public void run() {
@@ -54,12 +49,12 @@ public class MailSender extends MessageSender{
             message.setFrom(new InternetAddress("borman5433@gmail.com"));
             message.setRecipients(Message.RecipientType.TO,
                     InternetAddress.parse(eMailOfTheRecipient));
-            message.setSubject("EfirMonitoringError " + new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(new Date()));
+            message.setSubject("EfirMonitoringError");
 
             message.setText(myMessage);
 
             Transport.send(message);
-            System.out.println("E-mail sent to " + eMailOfTheRecipient);
+            System.out.println("\nE-mail sent to " + eMailOfTheRecipient);
         } catch (MessagingException e) {
             throw new RuntimeException(e);
         }
