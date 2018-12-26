@@ -1,16 +1,21 @@
 package Notifier;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class PushNotifier implements Notifier, Runnable {
 
     private String myMessage;
-    private String url = "https://pushall.ru/api.php?type=self&id=80900&key=cdbe8b1d9698396460991f7518f85a2a&text=";
+    private String url = "https://pushall.ru/api.php?type=broadcast&id=4697&key=22e4b88cc854ad20c5a6bf42b09a432c&title=EfirMonitoringError&text=";
 
     public void sendMessage(String myMessage) {
-        this.myMessage = myMessage;
+        try {
+            this.myMessage = new String (myMessage.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         new Thread(this).start();
     }
 
