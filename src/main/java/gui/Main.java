@@ -15,7 +15,7 @@ import java.util.List;
  1. Сделать контроль наличия логотипа
  2. Дать возможность выбора, на какую почту отправлять сообщения (или Push уведомления)
  3. Дать возможность запускать в фоновом или полном режиме
- 4. Сделать выбор за чем следить: обычный логотип, новогодний логотип, траурный (траур + новый год), свечка.
+ 4. Сделать, чтобы определялся текущий логотип при запуске и за ним программа следила дальше
 
   1000. Контролировать знак 16+
   2000. Подумать, как программа может сама включать логотип.
@@ -26,15 +26,16 @@ public class Main {
     public static void main(String[] args) {
         int FRAME_WIDTH = 800;
         int FRAME_HEIGHT = 600;
-        int maxFreezeTime = 7000; // ms
+        long maxFreezeTime = 7000; // ms
+        long timeUntilReboot = 3*60*60*1000; // Раз в 3 часа отключаемся от IP потока и подключаемся снова
+        long timeLastReboot = System.currentTimeMillis();
 
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.loadLibrary("opencv_ffmpeg400_64");
 
         String videoStreamAdr = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
 
-        VideoCapture videoStream = new VideoCapture(0);
-//        VideoCapture videoStream = new VideoCapture(videoStreamAdr);
+        VideoCapture videoStream = new VideoCapture(videoStreamAdr);
 
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
@@ -91,6 +92,14 @@ public class Main {
                     System.out.print(new SimpleDateFormat("\nHH:mm:ss").format(new Date())); // Перенос строки
                     counter = 0;
                 }
+
+                if(System.currentTimeMillis() - timeLastReboot > timeUntilReboot){
+                    new GUINotifier().sendMessage("Пересоздадим объект VideoCapture, чтобы пересоздался файл *.tmp ");
+                    videoStream.release();
+                    videoStream = new VideoCapture(videoStreamAdr);
+                    timeLastReboot = System.currentTimeMillis();
+                    continue;
+                }
 //*/
                 frame.copyTo(frame_current);
 
@@ -116,7 +125,7 @@ public class Main {
                             Rect r = Imgproc.boundingRect(contours.get(idx));
                             Imgproc.drawContours(frame, contours, idx, scalar1);
                             Imgproc.rectangle(frame, r.br(), r.tl(), scalar2, 1);
-                            frame.copyTo(frame_temp);
+//                            frame.copyTo(frame_temp); //----------
 
                         }
                         contour.release();
@@ -125,7 +134,6 @@ public class Main {
                     currentTime = System.currentTimeMillis();
                     if (!foundMovement) {
                         if (currentTime - previousTime > maxFreezeTime) {
-                            new SoundNotifier();
                             alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Warning! Video frozen";
                             for (Notifier notifier : notifiers) {
                                 notifier.sendMessage(alarmMessage);
@@ -147,12 +155,12 @@ public class Main {
                 frame_current.release();
 
             } else {
-                alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Кадр не прочитан - скорее всего завис ffmpeg. Перезапускаем main() в другом потоке";
+                alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Кадр не прочитан - скорее всего завис ffmpeg. Освобождаем VideoCapture и снова его создаем";
                 for (Notifier notifier : notifiers) {
                     notifier.sendMessage(alarmMessage);
                 }
-                new Reboot(Thread.currentThread().getName() + "_1");
-                Thread.currentThread().stop();
+                videoStream.release();
+                videoStream = new VideoCapture(videoStreamAdr);
             }
         }
     }
