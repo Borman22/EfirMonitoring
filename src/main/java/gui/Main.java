@@ -80,6 +80,16 @@ public class Main {
                 new GUINotifier()
         };
 
+
+        // Точки, в которых будем мерять цвет логотипа
+        double [] point1;
+        double [] point2;
+        double [] point3;
+
+        int averageB;
+        int averageG;
+        int averageR;
+
         while (true) {
             if (videoStream.read(frame)) {
 
@@ -92,6 +102,23 @@ public class Main {
                 if (++counter == 180) {
                     System.out.print(new SimpleDateFormat("\nHH:mm:ss").format(new Date())); // Перенос строки
                     counter = 0;
+                }
+
+                // Проверка логотипа в трех точках
+                point1 = frame.get(92,75);  // point of BGR
+                point2 = frame.get(72,61);  // point of BGR
+                point3 = frame.get(74,88);  // point of BGR
+
+                // Предельные средние значения: B[0,55] G[187,220] R[232,255]
+                averageB = (int)((point1[0] + point2[0] + point3[0])/3);
+                averageG = (int)((point1[1] + point2[1] + point3[1])/3);
+                averageR = (int)((point1[2] + point2[2] + point3[2])/3);
+
+                if(!((averageB < 60) && (averageG > 178) && (averageG < 225) && (averageR > 227))){
+                    alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo error!";
+                    for (Notifier notifier : notifiers) {
+                        notifier.sendMessage(alarmMessage);
+                    }
                 }
 
                 if(System.currentTimeMillis() - timeLastReboot > timeUntilReboot){
@@ -135,7 +162,7 @@ public class Main {
                     currentTime = System.currentTimeMillis();
                     if (!foundMovement) {
                         if (currentTime - previousTime > maxFreezeTime) {
-                            alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Warning! Video frozen";
+                            alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Video frozen";
                             for (Notifier notifier : notifiers) {
                                 notifier.sendMessage(alarmMessage);
                             }
@@ -156,7 +183,7 @@ public class Main {
                 frame_current.release();
 
             } else {
-                alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Кадр не прочитан - скорее всего завис ffmpeg. Освобождаем VideoCapture и снова его создаем";
+                alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Не удалось прочитать кадр. Возможно завис тюнер или роутер или ffmpeg";
                 for (Notifier notifier : notifiers) {
                     notifier.sendMessage(alarmMessage);
                 }
