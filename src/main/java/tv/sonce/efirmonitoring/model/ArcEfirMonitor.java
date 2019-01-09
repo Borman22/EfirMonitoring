@@ -60,7 +60,7 @@ public class ArcEfirMonitor implements Runnable{
             } catch (InterruptedException e) { }
 
             if(isRecordWorks())
-                consoleMessage = "  \\\\Arc-efir OK ";
+                consoleMessage = " \\\\Arc-efir OK";
         }
     }
 
@@ -97,14 +97,14 @@ public class ArcEfirMonitor implements Runnable{
         newFileLength = newFile.length();
 
         if (oldFileCreate == newFileCreate) {
-            if (oldFileLength < (newFileLength - 2500000L * intervalMinutes)) {  // считаем, что минимальный поток 2.5 МБ/с (стоп-кадр 0.742 МБ/с, движение около 3 МБ/с)
+            if (oldFileLength < (newFileLength - 2500000 * intervalMinutes)) {  // считаем, что минимальный поток 2.5 МБ/с (стоп-кадр 0.742 МБ/с, движение около 3 МБ/с)
                 oldFileLength = newFileLength;
                 return true;
             } else {
                 if (oldFileLength == newFileLength)  // Если объем файла не меняется, то рекордер завис
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: The recorder has hung up ";
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: The recorder has hung up . oldFileLength = " + oldFileLength + ". newFileLength = " + newFileLength + " ";
                 else
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: The tuner shows a static picture ";  // Если тюнер пишет, но с маленьким потоком, то картинка статичная
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: The tuner shows a static picture. oldFileLength = " + oldFileLength + ". newFileLength = " + newFileLength + " ";  // Если тюнер пишет, но с маленьким потоком, то картинка статичная
                 oldFileLength = newFileLength;
                 return false;
             }

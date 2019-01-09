@@ -28,8 +28,8 @@ public class EfirMonitor implements Runnable {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.loadLibrary("opencv_ffmpeg400_64");
 
-//        videoStream = new VideoCapture(videoStreamAdr);
-        videoStream = new VideoCapture(0);
+        videoStream = new VideoCapture(videoStreamAdr);
+//        videoStream = new VideoCapture(0);
 
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
