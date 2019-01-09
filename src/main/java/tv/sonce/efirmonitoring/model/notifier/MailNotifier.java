@@ -1,13 +1,7 @@
-package Notifier;
+package tv.sonce.efirmonitoring.model.notifier;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Properties;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
+import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
@@ -22,7 +16,7 @@ public class MailNotifier implements Notifier, Runnable {
     private int friquentlySentMessages = 5;
 
     private int messageNumber = 0;
-    private long lastMessageTime = System.currentTimeMillis();
+    private long lastMessageTime = 0;
     private String myMessage = "";
 
     private String eMailOfTheRecipient;
@@ -82,7 +76,7 @@ public class MailNotifier implements Notifier, Runnable {
 
             new Thread(() -> {
                 Session session = Session.getDefaultInstance(props,
-                        new javax.mail.Authenticator() {
+                        new Authenticator() {
                             protected PasswordAuthentication getPasswordAuthentication() {
                                 return new PasswordAuthentication(userName, password);
                             }
@@ -99,7 +93,7 @@ public class MailNotifier implements Notifier, Runnable {
                     Transport.send(message);
                     System.out.println("\nE-mail sent to " + eMailOfTheRecipient);
                 } catch (MessagingException e) {
-                    throw new RuntimeException(e);
+                    System.out.println("Не удалось отправить сообщение. \n" + e);
                 }
             }).start();
         }

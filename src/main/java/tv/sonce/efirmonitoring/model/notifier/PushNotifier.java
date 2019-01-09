@@ -1,4 +1,4 @@
-package Notifier;
+package tv.sonce.efirmonitoring.model.notifier;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -10,13 +10,13 @@ public class PushNotifier implements Notifier, Runnable {
     // Первые 5 сообщений отправляем с интервалом в 10 сек, остальные в 1 мин. Если ничего не отправлялось в течении 3х минут, все счетчики обнуляем
     // и следующее 5 сообщений опять отправляем с интервалом 10 сек
 
-    private long smallInterval = 10*1000; // ms
-    private long largeInterval = 60*1000; // ms
-    private long resetInterval = 3*60*1000; // ms
-    private int friquentlySentMessages = 5;
+    private final long smallInterval = 10*1000; // ms
+    private final long largeInterval = 60*1000; // ms
+    private final long resetInterval = 3*60*1000; // ms
+    private final int friquentlySentMessages = 5;
 
     private int messageNumber = 0;
-    private long lastMessageTime = System.currentTimeMillis();
+    private long lastMessageTime = 0;
     private String myMessage = "";
     private String url = "https://pushall.ru/api.php?type=broadcast&id=4697&key=22e4b88cc854ad20c5a6bf42b09a432c&title=EfirMonitoringError&text=";
 //    private String url = "https://pushall.ru/api.php?type=self&id=80900&key=cdbe8b1d9698396460991f7518f85a2a&text=";

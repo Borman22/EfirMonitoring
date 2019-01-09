@@ -1,11 +1,11 @@
-package Notifier;
+package tv.sonce.efirmonitoring.model.notifier;
 
 import java.awt.*;
 
 public class SoundNotifier implements Notifier, Runnable{
 
     // будем воспроизводить звук не чаще, чем раз в 7 сек
-    private long lastMessageTime = System.currentTimeMillis();
+    private long lastMessageTime = 0;
     private Thread thread;
     private boolean makeSoundFlag = false;
     private long messageInterval = 7*1000;

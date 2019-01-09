@@ -1,4 +1,4 @@
-package gui;
+package tv.sonce.efirmonitoring.view;
 
 import org.opencv.core.Mat;
 import org.opencv.highgui.HighGui;
