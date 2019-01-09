@@ -183,11 +183,16 @@ public class Main {
                 frame_current.release();
 
             } else {
-                alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Не удалось прочитать кадр. Возможно завис тюнер или роутер или ffmpeg";
+                alarmMessage = new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Не удалось прочитать кадр с тюнера";
                 for (Notifier notifier : notifiers) {
                     notifier.sendMessage(alarmMessage);
                 }
                 videoStream.release();
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 videoStream = new VideoCapture(videoStreamAdr);
             }
         }
