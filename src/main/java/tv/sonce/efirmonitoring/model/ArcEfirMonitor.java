@@ -9,7 +9,7 @@ import java.util.Date;
 public class ArcEfirMonitor implements Runnable{
 
     private String pass = "\\\\arch-efir\\Air_record_SOLAR\\";   // Путь к папке
-    private final int intervalMinutes = 3*60*1000; // Опрашиваем папку раз в 3 минуты
+    private final int intervalMinutes = 3; // Опрашиваем папку раз в 3 минуты
 
     private String alarmMessage = "";
     private String consoleMessage = "";
@@ -56,7 +56,7 @@ public class ArcEfirMonitor implements Runnable{
             }
 
             try {
-                wait(intervalMinutes);
+                wait(intervalMinutes*60*1000);
             } catch (InterruptedException e) { }
 
             if(isRecordWorks())
