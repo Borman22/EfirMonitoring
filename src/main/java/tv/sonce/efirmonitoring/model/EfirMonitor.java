@@ -26,7 +26,7 @@ public class EfirMonitor implements Runnable {
     private int countOfDroppedFrames = 0;
     private final long MAX_TIME_DROPPED_FRAMES = 5*1000; // за сколько времени мерять потерянные кадры
     private long lastTimeDroppedFrame = 0;
-    private final long TIME_FOR_SLEEPING_WHEN_FRAMES_DROPPED = 10*1000;
+    private final long TIME_FOR_SLEEPING_WHEN_FRAMES_DROPPED = 5*1000;
 
 
 
@@ -173,6 +173,10 @@ public class EfirMonitor implements Runnable {
 
                 if(countOfDroppedFrames >= MAX_COUNT_OF_DROPPED_FRAMES) {
                     alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Не удалось прочитать кадр с тюнера ";
+                    for (Notifier notifier : notifiers) {
+                        notifier.sendMessage(alarmMessage);
+                    }
+                    alarmMessage = "";
                     videoStream.release();
                     try {
                         Thread.sleep(TIME_FOR_SLEEPING_WHEN_FRAMES_DROPPED);
