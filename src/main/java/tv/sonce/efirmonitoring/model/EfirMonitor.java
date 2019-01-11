@@ -15,12 +15,19 @@ public class EfirMonitor implements Runnable {
 
     private final int FRAME_WIDTH = 800;
     private final int FRAME_HEIGHT = 600;
-    private final long maxFreezeTime = 7*1000; // ms
-    private final long timeUntilReboot = 3*60*60*1000; // Раз в 3 часа отключаемся от IP потока и подключаемся снова
+    private final long MAZ_FREEZE_TIME = 7*1000; // ms
+    private final long TIME_UNTIL_REBOOT = 3*60*60*1000; // Раз в 3 часа отключаемся от IP потока и подключаемся снова
     private long timeLastReboot;
     private VideoCapture videoStream;
-    private String videoStreamAdr = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
+    private String VIDEO_STREAM_ADR = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
     private Notifier[] notifiers;
+    
+    private final int MAX_COUNT_OF_DROPPED_FRAMES = 10;    // сколько потерянных кадров
+    private int countOfDroppedFrames = 0;
+    private final long MAX_TIME_DROPPED_FRAMES = 5*1000; // за сколько времени мерять потерянные кадры
+    private long lastTimeDroppedFrame = 0;
+    private final long TIME_FOR_SLEEPING_WHEN_FRAMES_DROPPED = 10*1000;
+
 
 
     public EfirMonitor(Notifier[] notifiers){
@@ -28,7 +35,7 @@ public class EfirMonitor implements Runnable {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.loadLibrary("opencv_ffmpeg400_64");
 
-        videoStream = new VideoCapture(videoStreamAdr);
+        videoStream = new VideoCapture(VIDEO_STREAM_ADR);
 //        videoStream = new VideoCapture(0);
 
         videoStream.set(Videoio.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
@@ -63,7 +70,7 @@ public class EfirMonitor implements Runnable {
         long currentTime = System.currentTimeMillis();
         long previousTime = currentTime;
 
-        System.out.println("The program monitors the broadcast. Allowed freeze frame less than " + maxFreezeTime / 1000 + " seconds ");
+        System.out.println("The program monitors the broadcast. Allowed freeze frame less than " + MAZ_FREEZE_TIME / 1000 + " seconds ");
 
         int counter = 0;
         int frameCounter = 0;
@@ -95,10 +102,10 @@ public class EfirMonitor implements Runnable {
                     alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo error! ";
 
                 // Раз в 3 часа отключаемся от IP потока и подключаемся снова
-                if(System.currentTimeMillis() - timeLastReboot > timeUntilReboot){
+                if(System.currentTimeMillis() - timeLastReboot > TIME_UNTIL_REBOOT){
                     new GUINotifier().sendMessage("Пересоздадим объект VideoCapture, чтобы пересоздался файл *.tmp ");
                     videoStream.release();
-                    videoStream = new VideoCapture(videoStreamAdr);
+                    videoStream = new VideoCapture(VIDEO_STREAM_ADR);
                     timeLastReboot = System.currentTimeMillis();
                     continue;
                 }
@@ -133,7 +140,7 @@ public class EfirMonitor implements Runnable {
 
                     currentTime = System.currentTimeMillis();
                     if (!foundMovement) {
-                        if (currentTime - previousTime > maxFreezeTime) {
+                        if (currentTime - previousTime > MAZ_FREEZE_TIME) {
                             alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Video frozen ";
                             previousTime = currentTime;
                         }
@@ -151,14 +158,32 @@ public class EfirMonitor implements Runnable {
                 frame_current.release();
 
             } else {
-                alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Не удалось прочитать кадр с тюнера ";
-                videoStream.release();
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                // Будем реагировать не на каждый потерянный кадр, а только если потерялись M кадров за N сек
+                countOfDroppedFrames++;
+                if(lastTimeDroppedFrame == 0){
+                    lastTimeDroppedFrame = System.currentTimeMillis();
+                    continue;
                 }
-                videoStream = new VideoCapture(videoStreamAdr);
+
+                if(System.currentTimeMillis() - lastTimeDroppedFrame > MAX_TIME_DROPPED_FRAMES){
+                    countOfDroppedFrames = 1;
+                    lastTimeDroppedFrame = System.currentTimeMillis();
+                    continue;
+                }
+
+                if(countOfDroppedFrames >= MAX_COUNT_OF_DROPPED_FRAMES) {
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Не удалось прочитать кадр с тюнера ";
+                    videoStream.release();
+                    try {
+                        Thread.sleep(TIME_FOR_SLEEPING_WHEN_FRAMES_DROPPED);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    videoStream = new VideoCapture(VIDEO_STREAM_ADR);
+
+                    countOfDroppedFrames = 0;
+                    lastTimeDroppedFrame = 0;
+                }
             }
         }
     }
