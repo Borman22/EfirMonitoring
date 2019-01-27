@@ -15,14 +15,14 @@ public class EfirMonitor implements Runnable {
 
     private final int FRAME_WIDTH = 800;
     private final int FRAME_HEIGHT = 600;
-    private final long MAZ_FREEZE_TIME = 7*1000; // ms
-    private final long TIME_UNTIL_REBOOT = 3*60*60*1000; // Раз в 3 часа отключаемся от IP потока и подключаемся снова
+    private final long MAX_FREEZE_TIME = 7*1000; // ms
+    private final long TIME_UNTIL_REBOOT = 5*60*60*1000; // Раз в 5 часов отключаемся от IP потока и подключаемся снова
     private long timeLastReboot;
     private VideoCapture videoStream;
     private String VIDEO_STREAM_ADR = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
     private Notifier[] notifiers;
     
-    private final int MAX_COUNT_OF_DROPPED_FRAMES = 10;    // сколько потерянных кадров
+    private final int MAX_COUNT_OF_DROPPED_FRAMES = 5;    // сколько потерянных кадров
     private int countOfDroppedFrames = 0;
     private final long MAX_TIME_DROPPED_FRAMES = 5*1000; // за сколько времени мерять потерянные кадры
     private long lastTimeDroppedFrame = 0;
@@ -47,7 +47,7 @@ public class EfirMonitor implements Runnable {
     @Override
     public void run() {
         if (!videoStream.isOpened()) {
-            System.out.println("Error. I cannot open the video stream");
+            System.out.println("Error. I cannot open the video stream. Module 'EfirMonitor' is stopped.");
             videoStream.release();
             return;
         }
@@ -70,7 +70,7 @@ public class EfirMonitor implements Runnable {
         long currentTime = System.currentTimeMillis();
         long previousTime = currentTime;
 
-        System.out.println("The program monitors the broadcast. Allowed freeze frame less than " + MAZ_FREEZE_TIME / 1000 + " seconds ");
+        System.out.println("The program monitors the broadcast. Allowed freeze frame less than " + MAX_FREEZE_TIME / 1000 + " seconds ");
 
         int counter = 0;
         int frameCounter = 0;
@@ -98,10 +98,21 @@ public class EfirMonitor implements Runnable {
                 }
 
                 // Проверка наличия логотипа
-                if(!isLogoOK(frame))
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo error! ";
+                boolean logoV2Present = isLogoV2Present(frame);
+                boolean logoTraurPresent = isLogoTraurPresent(frame);
+                boolean candlePresent = isCandlePresent(frame);
 
-                // Раз в 3 часа отключаемся от IP потока и подключаемся снова
+                if(!(logoV2Present || logoTraurPresent))
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo is missing! ";
+
+                if(logoTraurPresent && !candlePresent)
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Candle is missing! ";
+
+                if(logoV2Present && candlePresent)
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Candle without Logo Traur! ";
+
+
+                // Раз в 5 часов отключаемся от IP потока и подключаемся снова
                 if(System.currentTimeMillis() - timeLastReboot > TIME_UNTIL_REBOOT){
                     new GUINotifier().sendMessage("Пересоздадим объект VideoCapture, чтобы пересоздался файл *.tmp ");
                     videoStream.release();
@@ -130,9 +141,9 @@ public class EfirMonitor implements Runnable {
                         if (contourArea > maxArea) {
                             foundMovement = true;
 
-                            Rect r = Imgproc.boundingRect(contours.get(idx));
-                            Imgproc.drawContours(frame, contours, idx, RED);
-                            Imgproc.rectangle(frame, r.br(), r.tl(), GREEN, 1);
+//                            Rect r = Imgproc.boundingRect(contours.get(idx));
+//                            Imgproc.drawContours(frame, contours, idx, RED);
+//                            Imgproc.rectangle(frame, r.br(), r.tl(), GREEN, 1);
 //                            frame.copyTo(frame_temp); //---------------------------------------------------
                         }
                         contour.release();
@@ -140,7 +151,7 @@ public class EfirMonitor implements Runnable {
 
                     currentTime = System.currentTimeMillis();
                     if (!foundMovement) {
-                        if (currentTime - previousTime > MAZ_FREEZE_TIME) {
+                        if (currentTime - previousTime > MAX_FREEZE_TIME) {
                             alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Video frozen ";
                             previousTime = currentTime;
                         }
@@ -192,9 +203,8 @@ public class EfirMonitor implements Runnable {
         }
     }
 
-    private boolean isLogoOK(Mat frame) {
+    private boolean isLogoV2Present(Mat frame) {
         // Проверка логотипа в трех точках. Точки, в которых будем мерять цвет логотипа
-        String alarmMessage;
         double[] point1 = frame.get(92,75);  // point of BGR
         double[] point2 = frame.get(72,61);  // point of BGR
         double[] point3 = frame.get(74,88);  // point of BGR
@@ -205,6 +215,32 @@ public class EfirMonitor implements Runnable {
         int averageR = (int)((point1[2] + point2[2] + point3[2])/3);
 
         return (averageB < 60) && (averageG > 178) && (averageG < 225) && (averageR > 227);
+    }
+
+    private boolean isLogoTraurPresent(Mat frame) {
+        // Проверка траурного логотипа в трех точках. Точки, в которых будем мерять цвет логотипа
+        double[] point1 = frame.get(92,75);  // point of BGR
+        double[] point2 = frame.get(72,61);  // point of BGR
+        double[] point3 = frame.get(74,88);  // point of BGR
+
+        // Предельные средние значения: B[152,255] G[152,255] R[151,255]
+        int averageB = (int)((point1[0] + point2[0] + point3[0])/3);
+        int averageG = (int)((point1[1] + point2[1] + point3[1])/3);
+        int averageR = (int)((point1[2] + point2[2] + point3[2])/3);
+        return (averageB > 147) && (averageG > 147) && (averageR > 146);
+    }
+
+    private boolean isCandlePresent(Mat frame) {
+        // Проверка свечи в двух точках. Точки, в которых будем мерять цвет свечи
+        double[] point1 = frame.get(510,617);  // point of BGR
+        double[] point2 = frame.get(525,617);  // point of BGR
+
+        // Предельные средние значения: B[62,199] G[150,228] R[203,255]
+        int averageB = (int)((point1[0] + point2[0])/2);
+        int averageG = (int)((point1[1] + point2[1])/2);
+        int averageR = (int)((point1[2] + point2[2])/2);
+
+        return (averageB > 57) && (averageB < 204) && (averageG > 145) && (averageG < 233) && (averageR > 198);
     }
 }
 
