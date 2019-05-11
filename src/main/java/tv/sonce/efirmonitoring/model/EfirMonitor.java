@@ -99,17 +99,17 @@ public class EfirMonitor implements Runnable {
 
                 // Проверка наличия логотипа
                 boolean logoV2Present = isLogoV2Present(frame);
-                boolean logoTraurPresent = isLogoTraurPresent(frame);
-                boolean candlePresent = isCandlePresent(frame);
-
-                if(!(logoV2Present || logoTraurPresent))
+//                boolean logoTraurPresent = isLogoTraurPresent(frame);
+//                boolean candlePresent = isCandlePresent(frame);
+//
+                if(!(logoV2Present))
                     alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo is missing! ";
-
-                if(logoTraurPresent && !candlePresent)
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Candle is missing! ";
-
-                if(logoV2Present && candlePresent)
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Candle without Logo Traur! ";
+//
+//                if(!logoTraurPresent)
+//                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo Traur is missing! ";
+//
+//                if(logoV2Present && candlePresent)
+//                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Candle without Logo Traur! ";
 
 
                 // Раз в 5 часов отключаемся от IP потока и подключаемся снова
@@ -227,7 +227,7 @@ public class EfirMonitor implements Runnable {
         int averageB = (int)((point1[0] + point2[0] + point3[0])/3);
         int averageG = (int)((point1[1] + point2[1] + point3[1])/3);
         int averageR = (int)((point1[2] + point2[2] + point3[2])/3);
-        return (averageB > 147) && (averageG > 147) && (averageR > 146);
+        return (averageB > 140) && (averageG > 140) && (averageR > 140);
     }
 
     private boolean isCandlePresent(Mat frame) {

@@ -2,6 +2,7 @@ package tv.sonce.efirmonitoring.controller;
 
 import tv.sonce.efirmonitoring.model.ArcEfirMonitor;
 import tv.sonce.efirmonitoring.model.EfirMonitor;
+import tv.sonce.efirmonitoring.model.PLBackupManager;
 import tv.sonce.efirmonitoring.model.notifier.*;
 
 /* TODO
@@ -29,6 +30,7 @@ public class MainController {
 
         new EfirMonitor(notifiers);
         new ArcEfirMonitor(notifiers);
+        new PLBackupManager(notifiers);
 
     }
 }
