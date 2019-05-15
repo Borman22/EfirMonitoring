@@ -5,14 +5,16 @@ import java.util.*;
 import tv.sonce.efirmonitoring.model.notifier.GUINotifier;
 import tv.sonce.efirmonitoring.model.notifier.MailNotifier;
 import tv.sonce.efirmonitoring.model.notifier.Notifier;
+import tv.sonce.efirmonitoring.model.notifier.SoundNotifier;
 
 public class PLBackupManager implements Runnable {
 
     private Notifier[] notifiers;
     private GUINotifier guiNotifier;
     private MailNotifier mailNotifier;
+    private SoundNotifier soundNotifier;
 
-    PLBackupManager currentObject;
+    private PLBackupManager currentObject;
 
     private Timer timer;
     private TimerTask timerTask;
@@ -25,9 +27,9 @@ public class PLBackupManager implements Runnable {
     private int currentHourOfDay;
 
     private Calendar tempCalendar;
-    int tempYear;
-    int tempMonth;
-    int tempDayOfMonth;
+    private int tempYear;
+    private int tempMonth;
+    private int tempDayOfMonth;
 
     public PLBackupManager(Notifier[] notifiers) {
         this.notifiers = notifiers;
@@ -36,11 +38,15 @@ public class PLBackupManager implements Runnable {
                 guiNotifier = (GUINotifier)notifier;
             if(notifier instanceof MailNotifier)
                 mailNotifier = (MailNotifier)notifier;
+            if(notifier instanceof SoundNotifier)
+                soundNotifier = (SoundNotifier)notifier;
         }
         if(mailNotifier == null)
             mailNotifier = new MailNotifier("borman5433@gmail.com");
         if(guiNotifier == null)
             guiNotifier = new GUINotifier();
+        if(soundNotifier == null)
+            soundNotifier = new SoundNotifier();
 
         timer = new Timer("Timer");
         calendar = new GregorianCalendar();
@@ -179,8 +185,8 @@ public class PLBackupManager implements Runnable {
 
             if((doskyRezerv != null) && (doskyStorage != null))
                 try {
-                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов:" + listOfCopiedFiles.size());
-                    guiNotifier.sendMessage("Запуск синхронизации " + doskyRezervPass + "\tиз\t" + doskyStoragePass);
+                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов: " + listOfCopiedFiles.size());
+                    guiNotifier.sendMessage("Запуск синхронизации " + doskyRezervPass + "  из  " + doskyStoragePass);
 
                     listOfCopiedFiles.addAll(doskyRezerv.syncronizeFrom(doskyStorage));
                 } catch (FileNotFoundException e) {
@@ -190,8 +196,8 @@ public class PLBackupManager implements Runnable {
 
             if((efirPlayListRezerv != null) && (efirPlayListStorage != null))
                 try {
-                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов:" + listOfCopiedFiles.size());
-                    guiNotifier.sendMessage("Запуск синхронизации " + efirPlayListRezervPass + "\tиз\t" + efirPlayListStoragePass);
+                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов: " + listOfCopiedFiles.size());
+                    guiNotifier.sendMessage("Запуск синхронизации " + efirPlayListRezervPass + "  из  " + efirPlayListStoragePass);
 
                     listOfCopiedFiles.addAll(efirPlayListRezerv.syncronizeFrom(efirPlayListStorage));
                 } catch (FileNotFoundException e) {
@@ -201,8 +207,8 @@ public class PLBackupManager implements Runnable {
 
             if((asRunRezerv != null) && (asRunStorage != null))
                 try {
-                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов:" + listOfCopiedFiles.size());
-                    guiNotifier.sendMessage("Запуск синхронизации " + asRunRezervPass + "\tиз\t" + asRunStoragePass);
+                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов: " + listOfCopiedFiles.size());
+                    guiNotifier.sendMessage("Запуск синхронизации " + asRunRezervPass + "  из  " + asRunStoragePass);
 
                     tempListOfCopiedFiles = asRunRezerv.syncronizeFrom(asRunStorage);
                     listOfCopiedFiles.addAll(tempListOfCopiedFiles);
@@ -214,8 +220,8 @@ public class PLBackupManager implements Runnable {
 
             if((asRunRezerv != null) && (asRunInmedia != null))
                 try {
-                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов:" + listOfCopiedFiles.size());
-                    guiNotifier.sendMessage("Запуск синхронизации " + asRunRezervPass + "\tиз\t" + asRunInmediaPass);
+                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов: " + listOfCopiedFiles.size());
+                    guiNotifier.sendMessage("Запуск синхронизации " + asRunRezervPass + "  из  " + asRunInmediaPass);
 
                     tempListOfCopiedFiles = asRunRezerv.syncronizeFrom(asRunInmedia);
                     listOfCopiedFiles.addAll(tempListOfCopiedFiles);
@@ -227,8 +233,8 @@ public class PLBackupManager implements Runnable {
 
             if((asRunLocal != null) && (asRunStorage != null))
                 try {
-                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов:" + listOfCopiedFiles.size());
-                    guiNotifier.sendMessage("Запуск синхронизации " + asRunLocalPass + "\tиз\t" + asRunStoragePass);
+                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов: " + listOfCopiedFiles.size());
+                    guiNotifier.sendMessage("Запуск синхронизации " + asRunLocalPass + "  из  " + asRunStoragePass);
 
                     tempListOfCopiedFiles = asRunLocal.syncronizeFrom(asRunStorage);
                     listOfCopiedFiles.addAll(tempListOfCopiedFiles);
@@ -240,8 +246,8 @@ public class PLBackupManager implements Runnable {
 
             if((asRunLocal != null) && (asRunInmedia != null))
                 try {
-                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов:" + listOfCopiedFiles.size());
-                    guiNotifier.sendMessage("Запуск синхронизации " + asRunLocalPass + "\tиз\t" + asRunInmediaPass);
+                    guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов: " + listOfCopiedFiles.size());
+                    guiNotifier.sendMessage("Запуск синхронизации " + asRunLocalPass + "  из  " + asRunInmediaPass);
 
                     tempListOfCopiedFiles = asRunLocal.syncronizeFrom(asRunInmedia);
                     listOfCopiedFiles.addAll(tempListOfCopiedFiles);
@@ -251,7 +257,7 @@ public class PLBackupManager implements Runnable {
                     guiNotifier.sendMessage(e.getLocalizedMessage());
                 }
 
-            guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов:" + listOfCopiedFiles.size() + "\n");
+            guiNotifier.sendMessage("На данный момент скопированно на локальный компьютер файлов: " + listOfCopiedFiles.size());
 
 
 
@@ -327,23 +333,26 @@ public class PLBackupManager implements Runnable {
                     for (int i = 0; i < listOfAbsentFilesInAsRunStorage.size(); i++) {
                         tempMessage += listOfAbsentFilesInAsRunStorage.get(i) + "\n";
                     }
+                    tempMessage += "\n";
                 }
 
                 if(listOfAbsentFilesInAsRunInmedia.size() != 0){
-                    tempMessage += "В папке " + asRunInmediaPass + " не найденные следующие файлы плейлистов: /n";
+                    tempMessage += "В папке " + asRunInmediaPass + " не найденные следующие файлы плейлистов: \n";
                     for (int i = 0; i < listOfAbsentFilesInAsRunInmedia.size(); i++) {
-                        tempMessage += listOfAbsentFilesInAsRunStorage.get(i) + "/n";
+                        tempMessage += listOfAbsentFilesInAsRunInmedia.get(i) + "\n";
                     }
+                    tempMessage += "\n";
                 }
                 messageForMe.add(tempMessage);
                 guiNotifier.sendMessage(tempMessage);
+                soundNotifier.sendMessage("");
             }
 
 
             // Cообщение только мне на почту: отчет в целом, что где не сохранилось
 
             // Какие файлы отсутствуют в папке  asRunRezervPass = "d:\\Borman\\PL\\__PlayListRezerv\\pl_lists\\"
-            List<String> listOfAbsentFilesInAsRunRezerv = new ArrayList<>();
+            List<String> listOfAbsentFilesInAsRunRezerv;
             if(asRunRezerv != null) {
                 listOfAbsentFilesInAsRunRezerv = asRunRezerv.getAbsentFilesList(pl_listLastFilesArray);
                 if(listOfAbsentFilesInAsRunRezerv.size() != 0){
@@ -355,7 +364,7 @@ public class PLBackupManager implements Runnable {
             }
 
             // Какие файлы отсутствуют в папке  asRunLocalPass = "d:\\Borman\\pl_lists\\"
-            List<String> listOfAbsentFilesInAsRunLocal = new ArrayList<>();
+            List<String> listOfAbsentFilesInAsRunLocal;
             if(asRunLocal != null) {
                 listOfAbsentFilesInAsRunLocal = asRunLocal.getAbsentFilesList(pl_listLastFilesArray);
                 if(listOfAbsentFilesInAsRunLocal.size() != 0){
@@ -367,10 +376,10 @@ public class PLBackupManager implements Runnable {
             }
 
             // Какие файлы отсутствуют в папке  doskyStoragePass = "\\\\storage\\Solarmedia\\Playlist_Dosky\\"
-            List<String> listOfAbsentFilesInDoskyStorage = new ArrayList<>();
+            List<String> listOfAbsentFilesInDoskyStorage;
             if(doskyStorage != null) {
                 listOfAbsentFilesInDoskyStorage = doskyStorage.getAbsentFilesList(doskiLastFilesArray);
-                if(listOfAbsentFilesInAsRunLocal.size() != 0){
+                if(listOfAbsentFilesInDoskyStorage.size() != 0){
                     messageForMe.add("В папке " + doskyStoragePass + " отсутствуют файлы:");
                     messageForMe.addAll(listOfAbsentFilesInDoskyStorage);
                 }
@@ -379,10 +388,10 @@ public class PLBackupManager implements Runnable {
             }
 
             // Какие файлы отсутствуют в папке  doskyRezervPass = "d:\\Borman\\PL\\__PlayListRezerv\\Playlist_Dosky\\"
-            List<String> listOfAbsentFilesInDoskyRezerv = new ArrayList<>();
+            List<String> listOfAbsentFilesInDoskyRezerv;
             if(doskyRezerv != null) {
                 listOfAbsentFilesInDoskyRezerv = doskyRezerv.getAbsentFilesList(doskiLastFilesArray);
-                if(listOfAbsentFilesInAsRunLocal.size() != 0){
+                if(listOfAbsentFilesInDoskyRezerv.size() != 0){
                     messageForMe.add("В папке " + doskyRezervPass + " отсутствуют файлы:");
                     messageForMe.addAll(listOfAbsentFilesInDoskyRezerv);
                 }
@@ -391,10 +400,10 @@ public class PLBackupManager implements Runnable {
             }
 
             // Какие файлы отсутствуют в папке  efirPlayListStoragePass = "\\\\storage\\Solarmedia\\EfirPlayList\\"
-            List<String> listOfAbsentFilesInEfirPlayListStorage = new ArrayList<>();
+            List<String> listOfAbsentFilesInEfirPlayListStorage;
             if(efirPlayListStorage != null) {
                 listOfAbsentFilesInEfirPlayListStorage = efirPlayListStorage.getAbsentFilesList(efirPlayListLastFilesArray);
-                if(listOfAbsentFilesInAsRunLocal.size() != 0){
+                if(listOfAbsentFilesInEfirPlayListStorage.size() != 0){
                     messageForMe.add("В папке " + efirPlayListStoragePass + " отсутствуют файлы:");
                     messageForMe.addAll(listOfAbsentFilesInEfirPlayListStorage);
                 }
@@ -403,10 +412,10 @@ public class PLBackupManager implements Runnable {
             }
 
             // Какие файлы отсутствуют в папке  efirPlayListRezervPass = "d:\\Borman\\PL\\__PlayListRezerv\\EfirPlayList\\" - сообщение мне на почту
-            List<String> listOfAbsentFilesInEfirPlayListRezerv = new ArrayList<>();
+            List<String> listOfAbsentFilesInEfirPlayListRezerv;
             if(efirPlayListRezerv != null) {
                 listOfAbsentFilesInEfirPlayListRezerv = efirPlayListRezerv.getAbsentFilesList(efirPlayListLastFilesArray);
-                if(listOfAbsentFilesInAsRunLocal.size() != 0){
+                if(listOfAbsentFilesInEfirPlayListRezerv.size() != 0){
                     messageForMe.add("В папке " + doskyRezervPass + " отсутствуют файлы:");
                     messageForMe.addAll(listOfAbsentFilesInEfirPlayListRezerv);
                 }
@@ -417,11 +426,11 @@ public class PLBackupManager implements Runnable {
 
 
             if (messageForMe.size() != 0) { // отправляем почту мне
-                StringBuffer stringBuffer = new StringBuffer();
+                StringBuilder stringBuilder = new StringBuilder();
                 for (String str : messageForMe) {
-                    stringBuffer.append(str).append("\n");
+                    stringBuilder.append(str).append("\n");
                 }
-                mailNotifier.sendMessage(stringBuffer.toString());
+                mailNotifier.sendMessage(stringBuilder.toString());
             }
 
 
@@ -441,7 +450,7 @@ public class PLBackupManager implements Runnable {
     }
 
     private void executeExtJAR(String command) {
-        Process proc = null;
+        Process proc;
         try {
             proc = Runtime.getRuntime().exec(command);
         } catch (IOException e) {
@@ -449,7 +458,7 @@ public class PLBackupManager implements Runnable {
             e.printStackTrace();
             return;
         }
-        BufferedReader reader = null;
+        BufferedReader reader;
         try {
             reader = new BufferedReader(new InputStreamReader(proc.getInputStream(), "CP1251"));
         } catch (UnsupportedEncodingException e) {
@@ -465,11 +474,10 @@ public class PLBackupManager implements Runnable {
         } catch (IOException e) {
             guiNotifier.sendMessage("Не удалось прочитать данные из входного потока при выполнении команды " + command);
             e.printStackTrace();
-            return;
         }
     }
 
-    void updateCurrentDate() {
+    private void updateCurrentDate() {
         calendar = new GregorianCalendar();
         currentYear = calendar.get(Calendar.YEAR);
         currentMonth = calendar.get(Calendar.MONTH);
@@ -477,7 +485,7 @@ public class PLBackupManager implements Runnable {
         currentHourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
     }
 
-    void updateTempCalendar(Calendar tempCalendar) {
+    private void updateTempCalendar(Calendar tempCalendar) {
         tempYear = tempCalendar.get(Calendar.YEAR);
         tempMonth = tempCalendar.get(Calendar.MONTH);
         tempDayOfMonth = tempCalendar.get(Calendar.DAY_OF_MONTH);
