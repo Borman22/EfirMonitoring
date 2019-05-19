@@ -16,7 +16,7 @@ public class EfirMonitor implements Runnable {
     private final int FRAME_WIDTH = 800;
     private final int FRAME_HEIGHT = 600;
     private final long MAX_FREEZE_TIME = 7*1000; // ms
-    private final long TIME_UNTIL_REBOOT = 5*60*60*1000; // Раз в 5 часов отключаемся от IP потока и подключаемся снова
+    private final long TIME_UNTIL_REBOOT = 4*60*60*1000; // Раз в 4 часа отключаемся от IP потока и подключаемся снова
     private long timeLastReboot;
     private VideoCapture videoStream;
     private String VIDEO_STREAM_ADR = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
@@ -99,10 +99,10 @@ public class EfirMonitor implements Runnable {
 
                 // Проверка наличия логотипа
                 boolean logoV2Present = isLogoV2Present(frame);
-//                boolean logoTraurPresent = isLogoTraurPresent(frame);
+                boolean logoTraurPresent = isLogoTraurPresent(frame);
 //                boolean candlePresent = isCandlePresent(frame);
 //
-                if(!(logoV2Present))
+                if(!(logoV2Present || logoTraurPresent))
                     alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo is missing! ";
 //
 //                if(!logoTraurPresent)
@@ -112,7 +112,7 @@ public class EfirMonitor implements Runnable {
 //                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Candle without Logo Traur! ";
 
 
-                // Раз в 5 часов отключаемся от IP потока и подключаемся снова
+                // Раз в 4 часа отключаемся от IP потока и подключаемся снова
                 if(System.currentTimeMillis() - timeLastReboot > TIME_UNTIL_REBOOT){
                     new GUINotifier().sendMessage("Пересоздадим объект VideoCapture, чтобы пересоздался файл *.tmp ");
                     videoStream.release();
