@@ -5,6 +5,8 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 import tv.sonce.efirmonitoring.model.notifier.*;
+import tv.sonce.efirmonitoring.model.streamer.Streamer;
+import tv.sonce.efirmonitoring.view.View;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,13 +15,11 @@ import java.util.List;
 
 public class EfirMonitor implements Runnable {
 
-    private final int FRAME_WIDTH = 800;
-    private final int FRAME_HEIGHT = 600;
     private final long MAX_FREEZE_TIME = 7*1000; // ms
     private final long TIME_UNTIL_REBOOT = 4*60*60*1000; // Раз в 4 часа отключаемся от IP потока и подключаемся снова
     private long timeLastReboot;
     private VideoCapture videoStream;
-    private String VIDEO_STREAM_ADR = "http://10.0.4.107:8001/1:0:1:1B08:11:55:320000:0:0:0:";
+    private Streamer streamer;
     private Notifier[] notifiers;
     
     private final int MAX_COUNT_OF_DROPPED_FRAMES = 5;    // сколько потерянных кадров
@@ -30,16 +30,17 @@ public class EfirMonitor implements Runnable {
 
 
 
-    public EfirMonitor(Notifier[] notifiers){
+    public EfirMonitor(Notifier[] notifiers, Streamer streamer){
         timeLastReboot = System.currentTimeMillis();
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         System.loadLibrary("opencv_ffmpeg400_64");
 
-        videoStream = new VideoCapture(VIDEO_STREAM_ADR);
+        this.streamer = streamer;
+        videoStream = new VideoCapture(streamer.getVideoStreamAddress());
 //        videoStream = new VideoCapture(0);
 
-        videoStream.set(Videoio.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
-        videoStream.set(Videoio.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
+        videoStream.set(Videoio.CV_CAP_PROP_FRAME_WIDTH, streamer.getWidth());
+        videoStream.set(Videoio.CV_CAP_PROP_FRAME_HEIGHT, streamer.getHeight());
         this.notifiers = notifiers;
         new Thread(this).start();
     }
@@ -55,11 +56,11 @@ public class EfirMonitor implements Runnable {
         int sensivity = 30;
         double maxArea = 30;
         int index = 0;
-        Mat frame = new Mat(FRAME_HEIGHT, FRAME_WIDTH, CvType.CV_8UC3);
-        Mat frame_current = new Mat(FRAME_HEIGHT, FRAME_WIDTH, CvType.CV_8UC3);
-        Mat frame_previous = new Mat(FRAME_HEIGHT, FRAME_WIDTH, CvType.CV_8UC3);
-        Mat frame_result = new Mat(FRAME_HEIGHT, FRAME_WIDTH, CvType.CV_8UC3);
-        Mat frame_temp = new Mat(FRAME_HEIGHT, FRAME_WIDTH, CvType.CV_8UC3);
+        Mat frame = new Mat(streamer.getHeight(), streamer.getWidth(), CvType.CV_8UC3);
+        Mat frame_current = new Mat(streamer.getHeight(), streamer.getWidth(), CvType.CV_8UC3);
+        Mat frame_previous = new Mat(streamer.getHeight(), streamer.getWidth(), CvType.CV_8UC3);
+        Mat frame_result = new Mat(streamer.getHeight(), streamer.getWidth(), CvType.CV_8UC3);
+        Mat frame_temp = new Mat(streamer.getHeight(), streamer.getWidth(), CvType.CV_8UC3);
         Size size = new Size(3, 3);
         Mat mat = new Mat();
         Scalar RED = new Scalar(0, 0, 255); //BGR
@@ -104,19 +105,13 @@ public class EfirMonitor implements Runnable {
 //
                 if(!(logoV2Present || logoTraurPresent))
                     alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo is missing! ";
-//
-//                if(!logoTraurPresent)
-//                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Logo Traur is missing! ";
-//
-//                if(logoV2Present && candlePresent)
-//                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Candle without Logo Traur! ";
 
 
                 // Раз в 4 часа отключаемся от IP потока и подключаемся снова
                 if(System.currentTimeMillis() - timeLastReboot > TIME_UNTIL_REBOOT){
                     new GUINotifier().sendMessage("Пересоздадим объект VideoCapture, чтобы пересоздался файл *.tmp ");
                     videoStream.release();
-                    videoStream = new VideoCapture(VIDEO_STREAM_ADR);
+                    videoStream = new VideoCapture(streamer.getVideoStreamAddress());
                     timeLastReboot = System.currentTimeMillis();
                     continue;
                 }
@@ -194,7 +189,7 @@ public class EfirMonitor implements Runnable {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    videoStream = new VideoCapture(VIDEO_STREAM_ADR);
+                    videoStream = new VideoCapture(streamer.getVideoStreamAddress());
 
                     countOfDroppedFrames = 0;
                     lastTimeDroppedFrame = 0;
@@ -205,42 +200,35 @@ public class EfirMonitor implements Runnable {
 
     private boolean isLogoV2Present(Mat frame) {
         // Проверка логотипа в трех точках. Точки, в которых будем мерять цвет логотипа
-        double[] point1 = frame.get(92,75);  // point of BGR
-        double[] point2 = frame.get(72,61);  // point of BGR
-        double[] point3 = frame.get(74,88);  // point of BGR
+        double[] point1 = frame.get(streamer.getLogoV2Coordinates()[0][0],streamer.getLogoV2Coordinates()[0][1]);  // point of BGR
+        double[] point2 = frame.get(streamer.getLogoV2Coordinates()[1][0],streamer.getLogoV2Coordinates()[1][1]);  // point of BGR
+        double[] point3 = frame.get(streamer.getLogoV2Coordinates()[2][0],streamer.getLogoV2Coordinates()[2][1]);  // point of BGR
 
-        // Предельные средние значения: B[0,55] G[187,220] R[232,255]
         int averageB = (int)((point1[0] + point2[0] + point3[0])/3);
         int averageG = (int)((point1[1] + point2[1] + point3[1])/3);
         int averageR = (int)((point1[2] + point2[2] + point3[2])/3);
 
-        return (averageB < 60) && (averageG > 178) && (averageG < 225) && (averageR > 227);
+//        return (averageB < 60) && (averageG > 178) && (averageG < 225) && (averageR > 227);
+        return (averageB > streamer.getLogoV2BGRColors()[0][0] - 5) && (averageB < streamer.getLogoV2BGRColors()[0][1] + 5)
+                && (averageG > streamer.getLogoV2BGRColors()[1][0] - 5) && (averageG < streamer.getLogoV2BGRColors()[1][1] + 5)
+                && (averageR > streamer.getLogoV2BGRColors()[2][0] - 5) && (averageR < streamer.getLogoV2BGRColors()[2][1] + 5);
     }
 
     private boolean isLogoTraurPresent(Mat frame) {
         // Проверка траурного логотипа в трех точках. Точки, в которых будем мерять цвет логотипа
-        double[] point1 = frame.get(92,75);  // point of BGR
-        double[] point2 = frame.get(72,61);  // point of BGR
-        double[] point3 = frame.get(74,88);  // point of BGR
+        double[] point1 = frame.get(streamer.getLogoV2Coordinates()[0][0],streamer.getLogoV2Coordinates()[0][1]);  // point of BGR
+        double[] point2 = frame.get(streamer.getLogoV2Coordinates()[1][0],streamer.getLogoV2Coordinates()[1][1]);  // point of BGR
+        double[] point3 = frame.get(streamer.getLogoV2Coordinates()[2][0],streamer.getLogoV2Coordinates()[2][1]);  // point of BGR
 
-        // Предельные средние значения: B[152,255] G[152,255] R[151,255]
         int averageB = (int)((point1[0] + point2[0] + point3[0])/3);
         int averageG = (int)((point1[1] + point2[1] + point3[1])/3);
         int averageR = (int)((point1[2] + point2[2] + point3[2])/3);
-        return (averageB > 140) && (averageG > 140) && (averageR > 140);
+//        return (averageB > 140) && (averageG > 140) && (averageR > 140);
+
+        return (averageB > streamer.getLogoTraurBGRColors()[0][0] - 5) && (averageB < streamer.getLogoTraurBGRColors()[0][1] + 5)
+                && (averageG > streamer.getLogoTraurBGRColors()[1][0] - 5) && (averageG < streamer.getLogoTraurBGRColors()[1][1] + 5)
+                && (averageR > streamer.getLogoTraurBGRColors()[2][0] - 5) && (averageR < streamer.getLogoTraurBGRColors()[2][1] + 5);
     }
 
-    private boolean isCandlePresent(Mat frame) {
-        // Проверка свечи в двух точках. Точки, в которых будем мерять цвет свечи
-        double[] point1 = frame.get(510,617);  // point of BGR
-        double[] point2 = frame.get(525,617);  // point of BGR
-
-        // Предельные средние значения: B[62,199] G[150,228] R[203,255]
-        int averageB = (int)((point1[0] + point2[0])/2);
-        int averageG = (int)((point1[1] + point2[1])/2);
-        int averageR = (int)((point1[2] + point2[2])/2);
-
-        return (averageB > 57) && (averageB < 204) && (averageG > 145) && (averageG < 233) && (averageR > 198);
-    }
 }
 

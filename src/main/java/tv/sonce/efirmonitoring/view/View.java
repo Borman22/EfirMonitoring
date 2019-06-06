@@ -19,7 +19,7 @@ public class View extends JComponent {
         jFrame = new JFrame();
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jFrame.add(this);
-        jFrame.setSize(800, 600);
+        jFrame.setSize(mat.width() + 50, mat.height() + 50);
         jFrame.setVisible(true);
     }
 

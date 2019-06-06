@@ -1,12 +1,15 @@
 package tv.sonce.efirmonitoring.model;
 
 import tv.sonce.efirmonitoring.model.notifier.Notifier;
+import tv.sonce.efirmonitoring.model.streamer.Streamer;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ArcEfirMonitor implements Runnable{
+
+    private Streamer streamer;
 
     private String pass = "\\\\arch-efir\\Air_record_SOLAR\\";   // Путь к папке
     private final int intervalMinutes = 3; // Опрашиваем папку раз в 3 минуты
@@ -25,8 +28,9 @@ public class ArcEfirMonitor implements Runnable{
 
     private final Notifier[] notifiers;
 
-    public ArcEfirMonitor(Notifier [] notifiers){
+    public ArcEfirMonitor(Notifier [] notifiers, Streamer streamer){
         this.notifiers = notifiers;
+        this.streamer = streamer;
         // Получаем с pass (ARC-EFIR) файл, который создан последним (самый молодой)
         oldFile = getLastestFile(pass);
         new Thread(this).start();
@@ -97,7 +101,7 @@ public class ArcEfirMonitor implements Runnable{
         newFileLength = newFile.length();
 
         if (oldFileCreate == newFileCreate) {
-            if (oldFileLength < (newFileLength - 2500000 * intervalMinutes)) {  // считаем, что минимальный поток 2.5 МБ/с (стоп-кадр 0.742 МБ/с, движение около 3 МБ/с)
+            if (oldFileLength < (newFileLength - streamer.getMinimumAverageFlow() * intervalMinutes)) {
                 oldFileLength = newFileLength;
                 return true;
             } else {

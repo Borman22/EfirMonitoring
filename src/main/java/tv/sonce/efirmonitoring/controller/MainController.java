@@ -4,6 +4,9 @@ import tv.sonce.efirmonitoring.model.ArcEfirMonitor;
 import tv.sonce.efirmonitoring.model.EfirMonitor;
 import tv.sonce.efirmonitoring.model.PLBackupManager;
 import tv.sonce.efirmonitoring.model.notifier.*;
+import tv.sonce.efirmonitoring.model.streamer.DreamBox;
+import tv.sonce.efirmonitoring.model.streamer.Streamer;
+import tv.sonce.efirmonitoring.model.streamer.Zgemma;
 
 /* TODO
  1.
@@ -28,8 +31,11 @@ public class MainController {
                 new GUINotifier()
         };
 
-        new EfirMonitor(notifiers);
-        new ArcEfirMonitor(notifiers);
+//        Streamer streamer = new DreamBox();
+        Streamer streamer = new Zgemma();
+
+        new EfirMonitor(notifiers, streamer);
+        new ArcEfirMonitor(notifiers, streamer);
         new PLBackupManager(notifiers);
 
     }
