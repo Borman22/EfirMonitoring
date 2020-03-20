@@ -2,6 +2,7 @@ package tv.sonce.efirmonitoring.controller;
 
 import tv.sonce.efirmonitoring.model.ArcEfirMonitor;
 import tv.sonce.efirmonitoring.model.EfirMonitor;
+import tv.sonce.efirmonitoring.model.FileCatcher;
 import tv.sonce.efirmonitoring.model.PLBackupManager;
 import tv.sonce.efirmonitoring.model.notifier.*;
 import tv.sonce.efirmonitoring.model.streamer.DreamBox;
@@ -37,6 +38,7 @@ public class MainController {
         new EfirMonitor(notifiers, streamer);
         new ArcEfirMonitor(notifiers, streamer);
         new PLBackupManager(notifiers);
+        new FileCatcher(notifiers);
 
     }
 }

@@ -16,7 +16,7 @@ public class Zgemma implements Streamer{
     private int [][] logoTraurBGRColors = {{152, 255},{152, 255},{151, 255}};
 
     private int frozenFrameFlow = 742000; // байт в минуту
-    private int minimumAverageFlow = 2600000;
+    private int minimumAverageFlow = 2100000;
     private int averageFlow = 3000000;
 
     @Override
