@@ -109,7 +109,7 @@ public class EfirMonitor implements Runnable {
 
                 // Раз в 4 часа отключаемся от IP потока и подключаемся снова
                 if(System.currentTimeMillis() - timeLastReboot > TIME_UNTIL_REBOOT){
-                    new GUINotifier().sendMessage("Пересоздадим объект VideoCapture, чтобы пересоздался файл *.tmp ");
+                    new GUINotifier().sendMessage("Переподключимся к тюнеру, чтобы пересоздался файл *.tmp ");
                     videoStream.release();
                     videoStream = new VideoCapture(streamer.getVideoStreamAddress());
                     timeLastReboot = System.currentTimeMillis();

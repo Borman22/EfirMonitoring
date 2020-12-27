@@ -32,7 +32,7 @@ public class ArcEfirMonitor implements Runnable{
         this.notifiers = notifiers;
         this.streamer = streamer;
         // Получаем с pass (ARC-EFIR) файл, который создан последним (самый молодой)
-        oldFile = getLastestFile(pass);
+        oldFile = getLatestFile(pass);
         new Thread(this).start();
     }
 
@@ -68,7 +68,7 @@ public class ArcEfirMonitor implements Runnable{
         }
     }
 
-    private File getLastestFile(String path){
+    private File getLatestFile(String path){
         // Находим файл, который создан позже всех и возвращаем его из метода
         File[] folderEntries;
         folderEntries = new File(path).listFiles();
@@ -79,7 +79,7 @@ public class ArcEfirMonitor implements Runnable{
 
         long tempTimeFileCreate = 0;
         for (File currentFile:folderEntries) {
-            if (tempTimeFileCreate < currentFile.lastModified()) {
+            if (tempTimeFileCreate < currentFile.lastModified() && !currentFile.isDirectory()) {
                 tempTimeFileCreate = currentFile.lastModified();
                 lastestFile = currentFile;
             }
@@ -90,7 +90,7 @@ public class ArcEfirMonitor implements Runnable{
     private boolean isRecordWorks() {
 
         // Получаем самый молодой файл.
-        newFile = getLastestFile(pass);
+        newFile = getLatestFile(pass);
 
         if (newFile == null) {
             alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Can not connect to " + pass + " ";
@@ -106,9 +106,9 @@ public class ArcEfirMonitor implements Runnable{
                 return true;
             } else {
                 if (oldFileLength == newFileLength)  // Если объем файла не меняется, то рекордер завис
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: The recorder has hung up . oldFileLength = " + oldFileLength + ". newFileLength = " + newFileLength + " ";
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: Рекордер завис. Размер старого файла = (" + oldFile.getAbsolutePath() + ") = " + oldFileLength + ". newFileLength = (" + newFile.getAbsolutePath() + ") = " + newFileLength + " ";
                 else
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: The tuner shows a static picture. oldFileLength = " + oldFileLength + ". newFileLength = " + newFileLength + " ";  // Если тюнер пишет, но с маленьким потоком, то картинка статичная
+                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: Тюнер показывает статичную картинку. Размер старого файла = (" + oldFile.getAbsolutePath() + ") = " + oldFileLength + ". newFileLength = (" + newFile.getAbsolutePath() + ") = " + newFileLength + " ";  // Если тюнер пишет, но с маленьким потоком, то картинка статичная
                 oldFileLength = newFileLength;
                 return false;
             }
