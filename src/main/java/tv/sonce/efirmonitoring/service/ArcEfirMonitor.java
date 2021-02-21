@@ -1,45 +1,36 @@
-package tv.sonce.efirmonitoring.model;
+package tv.sonce.efirmonitoring.service;
 
-import tv.sonce.efirmonitoring.model.notifier.Notifier;
-import tv.sonce.efirmonitoring.model.streamer.Streamer;
+import tv.sonce.efirmonitoring.service.notifier.Notifier;
+import tv.sonce.efirmonitoring.model.Streamer;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class ArcEfirMonitor implements Runnable{
+public class ArcEfirMonitor implements Runnable {
 
+    private static final String PASS = "\\\\arch-efir\\Air_record_SOLAR\\";   // Путь к папке
+    private static final int INTERVAL_MINUTES = 3; // Опрашиваем папку раз в 3 минуты
+    private final Notifier[] notifiers;
     private Streamer streamer;
-
-    private String pass = "\\\\arch-efir\\Air_record_SOLAR\\";   // Путь к папке
-    private final int intervalMinutes = 3; // Опрашиваем папку раз в 3 минуты
-
     private String alarmMessage = "";
     private String consoleMessage = "";
-
-    private File oldFile = null;
-    private File newFile = null;
-
+    private File oldFile;
     private long oldFileCreate = 0;
     private long oldFileLength = 0;
 
-    private long newFileCreate = 0;
-    private long newFileLength = 0;
-
-    private final Notifier[] notifiers;
-
-    public ArcEfirMonitor(Notifier [] notifiers, Streamer streamer){
+    public ArcEfirMonitor(Notifier[] notifiers, Streamer streamer) {
         this.notifiers = notifiers;
         this.streamer = streamer;
         // Получаем с pass (ARC-EFIR) файл, который создан последним (самый молодой)
-        oldFile = getLatestFile(pass);
+        oldFile = getLatestFile(PASS);
         new Thread(this).start();
     }
 
     @Override
     public synchronized void run() {
-        if(oldFile == null) {
-            System.out.println(new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Cannot connect to " + pass + " ");
+        if (oldFile == null) {
+            System.out.println(getTime() + " Cannot connect to " + PASS + " ");
             return;
         } else {
             oldFileCreate = oldFile.lastModified();
@@ -47,38 +38,43 @@ public class ArcEfirMonitor implements Runnable{
         }
 
         while (true) {
-            if(!alarmMessage.equals("")){
+            if (!alarmMessage.equals("")) {
                 for (Notifier notifier : notifiers) {
                     notifier.sendMessage(alarmMessage);
                 }
                 alarmMessage = "";
             }
 
-            if(!consoleMessage.equals("")){
+            if (!consoleMessage.equals("")) {
                 System.out.print(consoleMessage);
                 consoleMessage = "";
             }
 
             try {
-                wait(intervalMinutes*60*1000);
-            } catch (InterruptedException e) { }
+                wait(INTERVAL_MINUTES * 60L * 1000);
+            } catch (InterruptedException ignored) {
+            }
 
-            if(isRecordWorks())
+            if (isRecordWorks())
                 consoleMessage = " \\\\Arc-efir OK";
         }
     }
 
-    private File getLatestFile(String path){
+    private String getTime() {
+        return new SimpleDateFormat("HH:mm:ss").format(new Date());
+    }
+
+    private File getLatestFile(String path) {
         // Находим файл, который создан позже всех и возвращаем его из метода
         File[] folderEntries;
         folderEntries = new File(path).listFiles();
         File lastestFile = null;
 
-        if(folderEntries == null)
+        if (folderEntries == null)
             return null;
 
         long tempTimeFileCreate = 0;
-        for (File currentFile:folderEntries) {
+        for (File currentFile : folderEntries) {
             if (tempTimeFileCreate < currentFile.lastModified() && !currentFile.isDirectory()) {
                 tempTimeFileCreate = currentFile.lastModified();
                 lastestFile = currentFile;
@@ -90,32 +86,32 @@ public class ArcEfirMonitor implements Runnable{
     private boolean isRecordWorks() {
 
         // Получаем самый молодой файл.
-        newFile = getLatestFile(pass);
+        File newFile = getLatestFile(PASS);
 
         if (newFile == null) {
-            alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Can not connect to " + pass + " ";
+            alarmMessage += getTime() + " Can not connect to " + PASS + " ";
             return false;
         }
 
-        newFileCreate = newFile.lastModified();
-        newFileLength = newFile.length();
+        long newFileCreate = newFile.lastModified();
+        long newFileLength = newFile.length();
 
         if (oldFileCreate == newFileCreate) {
-            if (oldFileLength < (newFileLength - streamer.getMinimumAverageFlow() * intervalMinutes)) {
+            if (oldFileLength < (newFileLength - (long) streamer.getMinimumAverageFlow() * INTERVAL_MINUTES)) {
                 oldFileLength = newFileLength;
                 return true;
             } else {
                 if (oldFileLength == newFileLength)  // Если объем файла не меняется, то рекордер завис
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: Рекордер завис. Размер старого файла = (" + oldFile.getAbsolutePath() + ") = " + oldFileLength + ". newFileLength = (" + newFile.getAbsolutePath() + ") = " + newFileLength + " ";
+                    alarmMessage += getTime() + " \\\\Arc-efir: Рекордер завис. Размер старого файла = (" + oldFile.getAbsolutePath() + ") = " + oldFileLength + ". newFileLength = (" + newFile.getAbsolutePath() + ") = " + newFileLength + " ";
                 else
-                    alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " \\\\Arc-efir: Тюнер показывает статичную картинку. Размер старого файла = (" + oldFile.getAbsolutePath() + ") = " + oldFileLength + ". newFileLength = (" + newFile.getAbsolutePath() + ") = " + newFileLength + " ";  // Если тюнер пишет, но с маленьким потоком, то картинка статичная
+                    alarmMessage += getTime() + " \\\\Arc-efir: Тюнер показывает статичную картинку. Размер старого файла = (" + oldFile.getAbsolutePath() + ") = " + oldFileLength + ". newFileLength = (" + newFile.getAbsolutePath() + ") = " + newFileLength + " ";  // Если тюнер пишет, но с маленьким потоком, то картинка статичная
                 oldFileLength = newFileLength;
                 return false;
             }
         }
 
         if (oldFileCreate > newFileCreate) {
-            alarmMessage += new SimpleDateFormat("HH:mm:ss").format(new Date()) + " Last created file is lost or connection is lost ";
+            alarmMessage += getTime() + " Last created file is lost or connection is lost ";
             return false;
         }
 

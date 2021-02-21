@@ -1,16 +1,18 @@
-package tv.sonce.efirmonitoring.model.notifier;
+package tv.sonce.efirmonitoring.service.notifier.impl;
+
+import tv.sonce.efirmonitoring.service.notifier.Notifier;
 
 import java.awt.*;
 
-public class SoundNotifier implements Notifier, Runnable{
+public class SoundNotifier implements Notifier, Runnable {
 
     // будем воспроизводить звук не чаще, чем раз в 7 сек
     private long lastMessageTime = 0;
     private Thread thread;
     private boolean makeSoundFlag = false;
-    private long messageInterval = 7*1000;
+    private long messageInterval = 7 * 1000;
 
-    public SoundNotifier(){
+    public SoundNotifier() {
         thread = new Thread(this);
         thread.start();
     }
@@ -23,18 +25,18 @@ public class SoundNotifier implements Notifier, Runnable{
     public synchronized void run() {
 
         while (true) {
-            while (!makeSoundFlag){
+            while (!makeSoundFlag) {
                 try {
                     wait();
-                } catch (InterruptedException e) { }
+                } catch (InterruptedException e) {}
             }
 
             long deltaTime = System.currentTimeMillis() - lastMessageTime - messageInterval;
 
-            if(deltaTime < 0){
+            if (deltaTime < 0) {
                 try {
                     wait(-deltaTime);
-                } catch (InterruptedException e) { }
+                } catch (InterruptedException e) {}
                 continue;
             }
 
@@ -48,7 +50,7 @@ public class SoundNotifier implements Notifier, Runnable{
 
                     try {
                         Thread.sleep(1500);
-                    } catch (InterruptedException e) { }
+                    } catch (InterruptedException e) {}
                 }
             }).start();
         }

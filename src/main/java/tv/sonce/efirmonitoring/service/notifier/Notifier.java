@@ -1,4 +1,4 @@
-package tv.sonce.efirmonitoring.model.notifier;
+package tv.sonce.efirmonitoring.service.notifier;
 
 public interface Notifier {
     void sendMessage(String message);

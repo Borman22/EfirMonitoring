@@ -1,4 +1,4 @@
-package tv.sonce.efirmonitoring.model;
+package tv.sonce.efirmonitoring.service;
 
 import org.apache.commons.io.FileUtils;
 
@@ -9,10 +9,9 @@ import java.util.*;
 
 public class FolderKeeper {
 
-    private boolean isFolderExist = false;
     private final String pathToFolder;
+    private boolean isFolderExist = false;
     private File folder;
-    private File[] arrayOfFiles;
     private Map<String, File> mapOfFiles;
     private Set<String> setOfFileNames;
 
@@ -24,28 +23,24 @@ public class FolderKeeper {
     public void refresh() throws FileNotFoundException {
         isFolderExist = false;
         folder = new File(pathToFolder);
-        arrayOfFiles = folder.listFiles();
-        if(arrayOfFiles == null)
+        File[] arrayOfFiles = folder.listFiles();
+        if (arrayOfFiles == null)
             throw new FileNotFoundException("Не удалось подключиться к папке " + pathToFolder);
 
         mapOfFiles = new HashMap<>(3000);
-        for (int i = 0; i < arrayOfFiles.length; i++)
-            mapOfFiles.put(arrayOfFiles[i].getName(), arrayOfFiles[i]);
+        for (File arrayOfFile : arrayOfFiles) mapOfFiles.put(arrayOfFile.getName(), arrayOfFile);
 
         setOfFileNames = new HashSet<>(mapOfFiles.keySet());
         isFolderExist = true;
     }
 
     public List<String> syncronizeFrom(FolderKeeper originFolder) throws FileNotFoundException {
-        if(originFolder == null)
+        if (originFolder == null)
             throw new FileNotFoundException("Аргумент функции syncronizeFrom(FolderKeeper originFolder) не может быть равен null");
-        if(!isFolderExist)
+        if (!isFolderExist)
             throw new FileNotFoundException(pathToFolder + " не существует");
-        if(!originFolder.isFolderExist)
+        if (!originFolder.isFolderExist)
             throw new FileNotFoundException(originFolder.pathToFolder + " не существует или не удалось получить к ней доступ");
-
-//        this.refresh();
-//        originFolder.refresh();
 
         List<String> listOfCopiedFiles = new ArrayList<>();
 
@@ -65,18 +60,18 @@ public class FolderKeeper {
         return listOfCopiedFiles;
     }
 
-    public List<String> getAbsentFilesList(String[] arrayBeginningOfFileNames){
+    public List<String> getAbsentFilesList(String[] arrayBeginningOfFileNames) {
         List<String> listOfAbsentFiles = new ArrayList<>();
 
-         for (String beginningOfFileName : arrayBeginningOfFileNames) {
-             LabelA:
-             {
-                 for (String str : setOfFileNames)
-                     if (str.startsWith(beginningOfFileName))
-                         break LabelA;
-                 listOfAbsentFiles.add(beginningOfFileName);
-             }
-         }
+        for (String beginningOfFileName : arrayBeginningOfFileNames) {
+            LabelA:
+            {
+                for (String str : setOfFileNames)
+                    if (str.startsWith(beginningOfFileName))
+                        break LabelA;
+                listOfAbsentFiles.add(beginningOfFileName);
+            }
+        }
         return listOfAbsentFiles;
     }
 

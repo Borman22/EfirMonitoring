@@ -1,19 +1,22 @@
-package tv.sonce.efirmonitoring.model.streamer;
+package tv.sonce.efirmonitoring.model.impl;
 
-public class Zgemma implements Streamer{
-    private String videoStreamAddres = "http://10.0.4.107:8001/1:0:1:1B08:11:55:310000:0:0:0:";
+import tv.sonce.efirmonitoring.model.Streamer;
+
+public class DreamBox implements Streamer {
+
+    private String videoStreamAddres = "http://10.0.4.107:8001/1:0:1:1B08:11:55:300000:0:0:0:";
 
     private int width = 704;
     private int height = 576;
 
     // Точки, в которых будем мерять цвет логотипа
-    private int[][] logoV2Coordinates = {{92, 75},{72, 61},{74, 88}};
+    private int[][] logoV2Coordinates = {{92, 75}, {72, 61}, {74, 88}};
     // Предельные средние значения: B[0,55] G[187,220] R[232,255]
-    private int [][] logoV2BGRColors = {{0, 55},{187, 220},{232, 255}};
+    private int[][] logoV2BGRColors = {{0, 55}, {187, 220}, {232, 255}};
 
-    private int[][] logoTraurCoordinates = {{92, 75},{72, 61},{74, 88}};
+    private int[][] logoTraurCoordinates = {{92, 75}, {72, 61}, {74, 88}};
     // Предельные средние значения: B[152,255] G[152,255] R[151,255]
-    private int [][] logoTraurBGRColors = {{152, 255},{152, 255},{151, 255}};
+    private int[][] logoTraurBGRColors = {{152, 255}, {152, 255}, {151, 255}};
 
     private int frozenFrameFlow = 742000; // байт в минуту
     private int minimumAverageFlow = 2100000;
